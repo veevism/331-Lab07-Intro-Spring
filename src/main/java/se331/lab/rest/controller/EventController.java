@@ -1,8 +1,13 @@
 package se331.lab.rest.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+
 import se331.lab.rest.entity.Event;
 
 import jakarta.annotation.PostConstruct;
@@ -39,11 +44,87 @@ public class EventController {
                 .petAllowed(true)
                 .organizer("Fern Pollin")
                 .build());
+
+        eventList.add(Event.builder()
+                .id(789L)
+                .category("music")
+                .title("Summer Music Festival")
+                .description("Enjoy a day of live music performances under the sun.")
+                .location("Sunshine Park")
+                .date("July 30, 2022")
+                .time("14:00")
+                .petAllowed(false)
+                .organizer("Melody Maestro")
+                .build());
+
+        eventList.add(Event.builder()
+                .id(1011L)
+                .category("sports")
+                .title("Basketball Tournament")
+                .description("Cheer for your favorite teams in this exciting basketball tournament.")
+                .location("Sports Arena")
+                .date("April 18, 2022")
+                .time("09:30")
+                .petAllowed(false)
+                .organizer("Hoops League")
+                .build());
+
+        eventList.add(Event.builder()
+                .id(1314L)
+                .category("art")
+                .title("Art Exhibition")
+                .description("Explore the world of art through various exhibitions.")
+                .location("Art Gallery")
+                .date("May 25, 2022")
+                .time("11:00")
+                .petAllowed(true)
+                .organizer("Artistic Expressions")
+                .build());
+
+        eventList.add(Event.builder()
+                .id(1516L)
+                .category("technology")
+                .title("Tech Conference")
+                .description("Stay updated with the latest technology trends and innovations.")
+                .location("Tech Center")
+                .date("September 10, 2022")
+                .time("13:30")
+                .petAllowed(false)
+                .organizer("TechConnect")
+                .build());
     }
 
-    @GetMapping("events")
-    public ResponseEntity<?> getEventLists() {
-        return ResponseEntity.ok(eventList);
+    @GetMapping("event")
+    public ResponseEntity<?> getEventLists(@RequestParam(value = "_limit", required = false) Integer perPage,
+            @RequestParam(value = "_page", required = false) Integer page) {
+        perPage = perPage == null ? eventList.size() : perPage;
+        page = page == null ? 1 : page;
+        Integer firstIndex = (page - 1) * perPage;
+        List<Event> output = new ArrayList<>();
+        try {
+            for (int i = firstIndex; i < firstIndex + perPage; i++) {
+                output.add(eventList.get(i));
+            }
+            return ResponseEntity.ok(output);
+        } catch (IndexOutOfBoundsException ex) {
+            System.out.println("Error Occured");
+            return ResponseEntity.ok(output);
+        }
+    }
+
+    @GetMapping("event/{id}")
+    public ResponseEntity<?> getEvent(@PathVariable("id") Long id) {
+        Event output = null;
+        for (Event event : eventList) {
+            if (event.getId().equals(id)) {
+                output = event;
+                break;
+            }
+        }
+        if (output != null) {
+            return ResponseEntity.ok(output);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The given id is not found");
+        }
     }
 }
-
