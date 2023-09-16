@@ -10,105 +10,29 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import se331.lab.rest.entity.Event;
-
+import se331.lab.rest.service.EventService;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
+@RequiredArgsConstructor
+
 public class EventController {
-    List<Event> eventList;
-
-    @PostConstruct
-    public void init() {
-        eventList = new ArrayList<>();
-        eventList.add(Event.builder()
-                .id(123L)
-                .category("animal welfare")
-                .title("Cat Adoption Day")
-                .description("Find your new feline friend at this event.")
-                .location("Meow Town")
-                .date("January 28, 2022")
-                .time("12:00")
-                .petAllowed(true)
-                .organizer("Kat Laydee")
-                .build());
-
-        eventList.add(Event.builder()
-                .id(456L)
-                .category("food")
-                .title("Community Gardening")
-                .description("Join us as we tend to the community edible plants.")
-                .location("Flora City")
-                .date("March 14, 2022")
-                .time("10:00")
-                .petAllowed(true)
-                .organizer("Fern Pollin")
-                .build());
-
-        eventList.add(Event.builder()
-                .id(789L)
-                .category("music")
-                .title("Summer Music Festival")
-                .description("Enjoy a day of live music performances under the sun.")
-                .location("Sunshine Park")
-                .date("July 30, 2022")
-                .time("14:00")
-                .petAllowed(false)
-                .organizer("Melody Maestro")
-                .build());
-
-        eventList.add(Event.builder()
-                .id(1011L)
-                .category("sports")
-                .title("Basketball Tournament")
-                .description("Cheer for your favorite teams in this exciting basketball tournament.")
-                .location("Sports Arena")
-                .date("April 18, 2022")
-                .time("09:30")
-                .petAllowed(false)
-                .organizer("Hoops League")
-                .build());
-
-        eventList.add(Event.builder()
-                .id(1314L)
-                .category("art")
-                .title("Art Exhibition")
-                .description("Explore the world of art through various exhibitions.")
-                .location("Art Gallery")
-                .date("May 25, 2022")
-                .time("11:00")
-                .petAllowed(true)
-                .organizer("Artistic Expressions")
-                .build());
-
-        eventList.add(Event.builder()
-                .id(1516L)
-                .category("technology")
-                .title("Tech Conference")
-                .description("Stay updated with the latest technology trends and innovations.")
-                .location("Tech Center")
-                .date("September 10, 2022")
-                .time("13:30")
-                .petAllowed(false)
-                .organizer("TechConnect")
-                .build());
-    }
+    final EventService eventService;
 
     @GetMapping("event")
     public ResponseEntity<?> getEventLists(@RequestParam(value = "_limit", required = false) Integer perPage,
             @RequestParam(value = "_page", required = false) Integer page) {
-        perPage = perPage == null ? eventList.size() : perPage;
-        page = page == null ? 1 : page;
-        Integer firstIndex = (page - 1) * perPage;
-        List<Event> output = new ArrayList<>();
+        List<Event> output = null;
+        Integer eventSize = eventService.getEventSize();
         HttpHeaders responseHeader = new HttpHeaders();
-        responseHeader.set("x-total-count", String.valueOf(eventList.size()));
+        responseHeader.set("x-total-count", String.valueOf(eventSize));
 
         try {
-            for (int i = firstIndex; i < firstIndex + perPage; i++) {
-                output.add(eventList.get(i));
-            }
+            output = eventService.getEvents(perPage, page);
             return new ResponseEntity<>(output, responseHeader, HttpStatus.OK);
         } catch (IndexOutOfBoundsException ex) {
             System.out.println("Error Occured");
@@ -119,13 +43,8 @@ public class EventController {
 
     @GetMapping("event/{id}")
     public ResponseEntity<?> getEvent(@PathVariable("id") Long id) {
-        Event output = null;
-        for (Event event : eventList) {
-            if (event.getId().equals(id)) {
-                output = event;
-                break;
-            }
-        }
+        Event output = eventService.getEvent(id);
+
         if (output != null) {
             return ResponseEntity.ok(output);
         } else {
